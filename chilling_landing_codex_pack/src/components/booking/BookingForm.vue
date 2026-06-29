@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { computed, nextTick, ref } from 'vue'
+import { computed, nextTick, ref, onMounted } from 'vue'
 import { CalendarCheck2, ChevronDown, LoaderCircle, Minus, Plus, StickyNote, UserRound } from 'lucide-vue-next'
 import { submitBooking } from '../../api/bookingApi'
 import { BRANCH } from '../../data/branchData'
-import { SERVICE_CATALOG } from '../../data/serviceCatalog'
+import { SERVICE_CATALOG, fetchServices } from '../../data/serviceCatalog'
 import type { BookingPayload, BookingServiceSelection, ServiceGroup, ServiceItem } from '../../types/booking'
 import { formatCurrency } from '../../utils/formatCurrency'
 import { isValidVietnamesePhone, normalizePhone } from '../../utils/phone'
@@ -12,6 +12,10 @@ import { isDateTodayOrLater, todayLocal } from '../../utils/validation'
 import BookingSuccessModal from './BookingSuccessModal.vue'
 import BookingSummaryCard from './BookingSummaryCard.vue'
 import TimeSlotGrid from './TimeSlotGrid.vue'
+
+onMounted(() => {
+  fetchServices()
+})
 
 const phone = ref('')
 const fullName = ref('')
@@ -31,7 +35,7 @@ const serviceRows = ref<BookingServiceSelection[]>([
 ])
 
 function groupFor(row: BookingServiceSelection): ServiceGroup | undefined {
-  return SERVICE_CATALOG.find((group) => group.id === row.groupId)
+  return SERVICE_CATALOG.value.find((group) => group.id === row.groupId)
 }
 
 function serviceFor(row: BookingServiceSelection): ServiceItem | undefined {

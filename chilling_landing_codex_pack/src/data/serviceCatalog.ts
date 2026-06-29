@@ -1,43 +1,45 @@
-import type { ServiceGroup } from '../types/booking'
+import { ref } from 'vue'
+import type { ServiceGroup, ServiceItem } from '../types/booking'
+import { supabase } from '../lib/supabase'
 
-export const SERVICE_CATALOG: ServiceGroup[] = [
-  {
-    id: 'haircut',
-    groupName: '1/. Đặt Lịch Cắt Tóc Tại Đây',
-    services: [
-      { id: 'barber-cut', name: 'Thợ cắt (được quyền yêu cầu)', price: 70000, durationMinutes: 35, staffRole: 'barber', staffOptions: ['Thông'] },
-      { id: 'owner-cut', name: 'Chủ quán cắt', price: 100000, durationMinutes: 45, staffRole: 'owner', staffOptions: ['Boss Linh'] },
-    ],
-  },
-  {
-    id: 'chemical',
-    groupName: '2. UỐN - ÉP SIDE - TẨY - NHUỘM',
-    services: [
-      { id: 'fashion-color', name: 'Nhuộm màu thời trang (Free cắt)', price: 400000, durationMinutes: 180, staffRole: 'barber', staffOptions: ['Nam', 'Thông'] },
-      { id: 'basic-color', name: 'Nhuộm màu cơ bản (Free cắt)', price: 300000, durationMinutes: 120, staffRole: 'barber', staffOptions: ['Nam', 'Thông'] },
-      { id: 'trending-perm', name: 'Uốn tóc trending (Free cắt)', price: 450000, durationMinutes: 120, staffRole: 'barber', staffOptions: ['Nam', 'Thông'] },
-      { id: 'basic-perm', name: 'Uốn tóc cơ bản (Free cắt)', price: 300000, durationMinutes: 90, staffRole: 'barber', staffOptions: ['Nam', 'Thông'] },
-    ],
-  },
-  {
-    id: 'relax',
-    groupName: '3. Dịch Vụ Thư Giãn',
-    services: [
-      { id: 'full-massage', name: 'Massage mặt, cổ, vai gáy', price: 100000, durationMinutes: 120, staffRole: 'mixed', staffOptions: ['Hương', 'Thông', 'Nam'] },
-      { id: 'shampoo', name: 'Gội đầu (Shampoo)', price: 60000, durationMinutes: 15, staffRole: 'mixed', staffOptions: ['Hương', 'Thông', 'Nam'] },
-      { id: 'face-massage', name: 'Massage mặt', price: 20000, durationMinutes: 15, staffRole: 'mixed', staffOptions: ['Hương', 'Thông', 'Nam'] },
-    ],
-  },
-  {
-    id: 'extras',
-    groupName: '4. Dịch Vụ Riêng Lẻ',
-    services: [
-      { id: 'eye-care', name: 'Đánh mắt', price: 50000, durationMinutes: 20, staffRole: 'mixed', staffOptions: ['Hương', 'Thông'] },
-      { id: 'nails', name: 'Cắt móng tay, chân', price: 100000, durationMinutes: 20, staffRole: 'mixed', staffOptions: ['Hương', 'Thông'] },
-      { id: 'gray-hair', name: 'Nhổ tóc bạc', price: 50000, durationMinutes: 30, staffRole: 'mixed', staffOptions: ['Hương', 'Thông'] },
-      { id: 'face-steam', name: 'Xông mặt hút mụn', price: 50000, durationMinutes: 15, staffRole: 'skinner', staffOptions: ['Hương'] },
-      { id: 'pore-care', name: 'Se lỗ ghèn', price: 80000, durationMinutes: 20, staffRole: 'skinner', staffOptions: ['Hương'] },
-      { id: 'acne-care', name: 'Nặn mụn', price: 50000, durationMinutes: 30, staffRole: 'skinner', staffOptions: ['Hương'] },
-    ],
-  },
-]
+export const SERVICE_CATALOG = ref<ServiceGroup[]>([])
+
+export const fetchServices = async () => {
+  const { data, error } = await supabase
+    .from('services')
+    .select('*')
+    .eq('is_active', true)
+    .order('group_name')
+    .order('name')
+
+  if (error || !data) {
+    console.error('Error fetching services:', error)
+    return
+  }
+
+  // Group by group_name
+  const grouped = data.reduce((acc: Record<string, ServiceGroup>, item: any) => {
+    if (!acc[item.group_name]) {
+      // Create a slug for ID
+      const groupId = item.group_name.toLowerCase().replace(/[^a-z0-9]+/g, '-')
+      acc[item.group_name] = {
+        id: groupId,
+        groupName: item.group_name,
+        services: []
+      }
+    }
+
+    acc[item.group_name].services.push({
+      id: item.id,
+      name: item.name,
+      price: item.price,
+      durationMinutes: item.duration_minutes,
+      staffRole: item.staff_role,
+      staffOptions: item.staff_options
+    } as ServiceItem)
+
+    return acc
+  }, {})
+
+  SERVICE_CATALOG.value = Object.values(grouped)
+}
