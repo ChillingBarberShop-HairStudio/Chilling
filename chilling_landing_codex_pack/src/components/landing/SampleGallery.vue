@@ -1,11 +1,14 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import BarberPoleStrip from '../ui/BarberPoleStrip.vue'
 
 const baseUrl = import.meta.env.BASE_URL
-const samples = Array.from({ length: 10 }, (_, index) => ({
+const props = defineProps<{ content?: Record<string, string>; samples?: Array<{ src: string; alt: string }> }>()
+const fallbackSamples = Array.from({ length: 10 }, (_, index) => ({
   src: `${baseUrl}sample/sample ${index + 1}.PNG`,
   alt: `Mẫu tóc hoàn thiện ${index + 1} tại Chilling Barber Shop`,
 }))
+const samples = computed(() => props.samples?.length ? props.samples : fallbackSamples)
 </script>
 
 <template>
@@ -14,10 +17,10 @@ const samples = Array.from({ length: 10 }, (_, index) => ({
     <div class="page-shell">
       <div class="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between" data-reveal="left">
         <div>
-          <p class="eyebrow">Chilling lookbook</p>
-          <h2 class="section-title">Tác phẩm hoàn thiện</h2>
+          <p class="eyebrow">{{ content?.eyebrow || 'Chilling lookbook' }}</p>
+          <h2 class="section-title">{{ content?.title || 'Tác phẩm hoàn thiện' }}</h2>
         </div>
-        <p class="max-w-md text-sm leading-6 text-muted">Một số phong cách tóc và trải nghiệm hoàn thiện tại Chilling Barber Shop.</p>
+        <p class="max-w-md text-sm leading-6 text-muted">{{ content?.description || 'Một số phong cách tóc và trải nghiệm hoàn thiện tại Chilling Barber Shop.' }}</p>
       </div>
       <div class="gallery-grid mt-12">
         <figure v-for="(sample, index) in samples" :key="sample.src" class="gallery-item" :class="{ 'sm:row-span-2': index === 0 || index === 5 }" data-reveal>
