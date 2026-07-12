@@ -36,6 +36,7 @@ type CatalogRow = {
   category: string
   price: number
   durationMinutes: number
+  providerRole?: 'barber' | 'skinner' | null
   staffOptions: string[]
 }
 
@@ -50,7 +51,14 @@ export async function fetchServices() {
   const groups = new Map<string, ServiceGroup>()
   for (const [index, item] of (data as CatalogRow[]).entries()) {
     const group = groups.get(item.category) ?? { id: `group-${groups.size + 1}`, groupName: item.category, services: [] }
-    group.services.push({ id: item.id || `service-${index}`, name: item.name, price: Number(item.price), durationMinutes: Number(item.durationMinutes), staffRole: 'barber', staffOptions: item.staffOptions ?? [] })
+    group.services.push({
+      id: item.id || `service-${index}`,
+      name: item.name,
+      price: Number(item.price),
+      durationMinutes: Number(item.durationMinutes),
+      staffRole: item.providerRole ?? 'barber',
+      staffOptions: item.staffOptions ?? [],
+    })
     groups.set(item.category, group)
   }
   SERVICE_CATALOG.value = [...groups.values()]
