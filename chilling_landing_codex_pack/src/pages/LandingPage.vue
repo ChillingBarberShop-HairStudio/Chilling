@@ -10,11 +10,11 @@ import BookingSection from '../components/landing/BookingSection.vue'
 import { initScrollReveal } from '../utils/reveal'
 import { isSupabaseConfigured, supabase } from '../lib/supabase'
 
-type LandingMedia = { id: string; section_key: 'hero' | 'studio' | 'services' | 'gallery'; storage_path: string; alt_text: string; sort_order: number }
+type LandingMedia = { id: string; section_key: 'hero' | 'studio' | 'services' | 'gallery'; storage_path: string; public_url: string | null; alt_text: string; sort_order: number }
 const content = ref<Record<string, Record<string, string>>>({})
 const media = ref<LandingMedia[]>([])
 const sectionImages = (section: LandingMedia['section_key']) => media.value.filter((item) => item.section_key === section).map((item) => ({
-  src: item.storage_path.startsWith('http') ? item.storage_path : supabase!.storage.from('landing-media').getPublicUrl(item.storage_path).data.publicUrl,
+  src: item.public_url || supabase!.storage.from('landing-media').getPublicUrl(item.storage_path).data.publicUrl,
   alt: item.alt_text,
 }))
 
@@ -22,7 +22,7 @@ async function loadLandingContent() {
   if (!isSupabaseConfigured || !supabase) return
   const [contentResult, mediaResult] = await Promise.all([
     supabase.from('landing_content').select('content_key, content_value').eq('is_public', true),
-    supabase.from('landing_media').select('id, section_key, storage_path, alt_text, sort_order').eq('is_active', true).order('section_key').order('sort_order').order('created_at'),
+    supabase.from('landing_media').select('id, section_key, storage_path, public_url, alt_text, sort_order').eq('is_active', true).order('section_key').order('sort_order').order('created_at'),
   ])
   if (!contentResult.error && contentResult.data) {
     content.value = Object.fromEntries(contentResult.data.map((row) => [row.content_key, row.content_value as Record<string, string>]))
